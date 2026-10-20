@@ -2,8 +2,8 @@
 """
 Kamagram Tender Radar
 =====================
-Automatically monitors RFP/tender portals and grant, accelerator and funding
-feeds for opportunities relevant to Kamagram, and sends email alerts.
+Automatically monitors tender/RFP sites for web, mobile app, and software
+development opportunities and sends daily email alerts.
 
 Usage:
     python radar.py              # Run full scan and send email
@@ -15,45 +15,49 @@ import argparse
 from datetime import datetime
 
 from db import init_db, save_tender, get_unsent, mark_sent, get_all_tenders
-from scrapers import (
-    jobinrwanda, worldbank, kenya_ppip, uganda_egp, undp, eu_funding, opportunity_feeds,
-    devex, tenderafrica, reliefweb, google_search,
-)
+from scrapers import jobinrwanda, brightermonday, devex, tenderafrica, reliefweb, google_search
 from config import SOURCES
 from emailer import send_email
-
-
-# (SOURCES key, display name, module)
-SCRAPERS = [
-    ("jobinrwanda", "JobInRwanda", jobinrwanda),
-    ("worldbank", "World Bank", worldbank),
-    ("kenya_ppip", "Kenya PPIP", kenya_ppip),
-    ("uganda_egp", "Uganda eGP", uganda_egp),
-    ("undp", "UNDP", undp),
-    ("eu_funding", "EU Funding & Tenders", eu_funding),
-    ("opportunity_feeds", "grant & accelerator feeds", opportunity_feeds),
-    ("devex", "Devex", devex),
-    ("tenderafrica", "TenderAfrica", tenderafrica),
-    ("reliefweb", "ReliefWeb", reliefweb),
-    ("google_search", "Google Custom Search", google_search),
-]
 
 
 def run_scrapers():
     """Run all enabled scrapers and return results."""
     all_tenders = []
 
-    for key, name, module in SCRAPERS:
-        if not SOURCES.get(key):
-            continue
-        print(f"[Scraper] Fetching from {name}...")
-        try:
-            tenders = module.fetch()
-        except Exception as e:
-            # One broken source shouldn't stop the others
-            print(f"[Scraper] {name} failed: {e}")
-            continue
-        print(f"[Scraper] Found {len(tenders)} matching opportunities from {name}")
+    if SOURCES.get("jobinrwanda"):
+        print("[Scraper] Fetching from JobInRwanda...")
+        tenders = jobinrwanda.fetch()
+        print(f"[Scraper] Found {len(tenders)} matching tenders from JobInRwanda")
+        all_tenders.extend(tenders)
+
+    if SOURCES.get("brightermonday"):
+        print("[Scraper] Fetching from BrighterMonday (Kenya, Uganda, Tanzania)...")
+        tenders = brightermonday.fetch()
+        print(f"[Scraper] Found {len(tenders)} matching tenders from BrighterMonday")
+        all_tenders.extend(tenders)
+
+    if SOURCES.get("devex"):
+        print("[Scraper] Fetching from Devex...")
+        tenders = devex.fetch()
+        print(f"[Scraper] Found {len(tenders)} matching tenders from Devex")
+        all_tenders.extend(tenders)
+
+    if SOURCES.get("tenderafrica"):
+        print("[Scraper] Fetching from TenderAfrica...")
+        tenders = tenderafrica.fetch()
+        print(f"[Scraper] Found {len(tenders)} matching tenders from TenderAfrica")
+        all_tenders.extend(tenders)
+
+    if SOURCES.get("reliefweb"):
+        print("[Scraper] Fetching from ReliefWeb...")
+        tenders = reliefweb.fetch()
+        print(f"[Scraper] Found {len(tenders)} matching tenders from ReliefWeb")
+        all_tenders.extend(tenders)
+
+    if SOURCES.get("google_search"):
+        print("[Scraper] Fetching from Google Custom Search...")
+        tenders = google_search.fetch()
+        print(f"[Scraper] Found {len(tenders)} matching tenders from Google")
         all_tenders.extend(tenders)
 
     return all_tenders

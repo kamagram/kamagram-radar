@@ -6,8 +6,6 @@ __pycache__/
 
 # Database
 tenders.db
-# CI keeps its copy here so sent tenders are remembered between runs
-!data/tenders.db
 
 # IDE
 .idea/

@@ -6,19 +6,19 @@ import re
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from config import KEYWORDS
-from scrapers.common import matches, is_open, format_date
 
 BASE_URL = "https://www.jobinrwanda.com"
 
 
 def fetch():
-    """Fetch tenders and consultancies from JobInRwanda that match our keywords."""
+    """Fetch tenders/jobs from JobInRwanda that match our keywords."""
     results = []
 
-    # Tender and consultancy categories only (regular job ads are skipped)
+    # Try different category pages (correct paths found from site)
     urls_to_try = [
         f"{BASE_URL}/jobs/tender",       # Tenders category
         f"{BASE_URL}/jobs/consultancy",  # Consultancy opportunities
+        f"{BASE_URL}/jobs/all",          # All jobs
     ]
 
     headers = {
@@ -58,7 +58,8 @@ def fetch():
                     continue
 
                 # Check if any keyword matches
-                if matches(title_text, KEYWORDS):
+                title_lower = title_text.lower()
+                if any(k.lower() in title_lower for k in KEYWORDS):
                     # Build full link
                     if href.startswith("/"):
                         full_link = BASE_URL + href
@@ -78,14 +79,10 @@ def fetch():
                         if employer_link:
                             org = employer_link.get_text(strip=True)
 
-                        # The deadline is the <time> tag after "Deadline"
-                        # (the text before it is the location and publish date)
-                        deadline_elem = container.find("time")
+                        # Look for deadline info
+                        deadline_elem = container.find(string=re.compile(r"deadline", re.I))
                         if deadline_elem:
-                            deadline_value = deadline_elem.get("datetime") or deadline_elem.get_text(strip=True)
-                            if not is_open(deadline_value):
-                                continue
-                            deadline = format_date(deadline_value)
+                            deadline = str(deadline_elem).strip()[:30]
 
                     results.append({
                         "title": title_text,

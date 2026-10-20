@@ -1,8 +1,7 @@
 import sqlite3
 import os
 
-# TENDERS_DB lets CI keep the database at a tracked path (see the workflow)
-DB_NAME = os.environ.get("TENDERS_DB") or os.path.join(os.path.dirname(__file__), "tenders.db")
+DB_NAME = os.path.join(os.path.dirname(__file__), "tenders.db")
 
 
 def init_db():

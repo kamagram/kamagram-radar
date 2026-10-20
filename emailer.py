@@ -49,7 +49,7 @@ def send_email(tenders):
     try:
         sg = SendGridAPIClient(SENDGRID_API_KEY)
         response = sg.send(message)
-        print(f"[Email] Successfully sent to {', '.join(EMAIL_TO)} (status: {response.status_code})")
+        print(f"[Email] Successfully sent to {EMAIL_TO} (status: {response.status_code})")
         return True
     except Exception as e:
         print(f"[Email] Failed to send: {e}")
