@@ -2,3 +2,5 @@ requests
 beautifulsoup4
 python-dateutil
 sendgrid
+python-dotenv
+lxml
