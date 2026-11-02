@@ -16,3 +16,6 @@ tenders.db
 
 # OS
 .DS_Store
+
+# Local email previews
+email_preview.*
