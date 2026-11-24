@@ -12,6 +12,7 @@ Usage:
 """
 
 import argparse
+import sys
 from datetime import datetime
 
 from db import init_db, save_tender, get_unsent, mark_sent, get_all_tenders
@@ -125,7 +126,9 @@ def main():
             mark_sent([t[0] for t in unsent])
             print(f"[Done] Email sent with {len(unsent)} tenders.")
         else:
-            print("[Done] Email not sent (check SMTP settings).")
+            print("[Done] Email not sent - see the [Email] error above. Tenders stay unsent for the next run.")
+            # Fail the run so GitHub Actions marks it red and sends a failure notification
+            sys.exit(1)
 
     print("\n" + "=" * 60)
 

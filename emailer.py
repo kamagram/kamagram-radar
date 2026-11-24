@@ -304,6 +304,10 @@ def send_email(tenders):
         return True
     except Exception as e:
         print(f"[Email] Failed to send: {e}")
+        # SendGrid explains the reason (expired plan, bad key, unverified sender...) in the body
+        body = getattr(e, "body", None)
+        if body:
+            print(f"[Email] SendGrid response: {body.decode('utf-8', 'replace') if isinstance(body, bytes) else body}")
         return False
 
 
