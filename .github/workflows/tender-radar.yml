@@ -2,8 +2,10 @@ name: Tender Radar Daily Scan
 
 on:
   schedule:
-    # Run at 7 AM UTC every Monday
-    - cron: '0 7 * * 1'
+    # Mondays 03:17 UTC = 05:17 Kigali, aiming for the email by 7 AM Kigali.
+    # GitHub delays scheduled runs (worst at the top of the hour), so this
+    # starts early on an off-peak minute to leave room for the delay.
+    - cron: '17 3 * * 1'
   workflow_dispatch:  # Allows manual trigger
 
 # Needed to commit the tender database back to the repo
