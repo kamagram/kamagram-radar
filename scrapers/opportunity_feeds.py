@@ -2,13 +2,14 @@
 
 import os
 import sys
+import time
 from datetime import datetime, timedelta
 
 import requests
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from config import OPPORTUNITY_TYPES, FUNDING_TOPICS, REGIONS
-from scrapers.common import matches, fetch_rss
+from scrapers.common import SESSION, matches, fetch_rss
 
 FEEDS = {
     "fundsforNGOs": "https://www2.fundsforngos.org/feed/",
@@ -22,17 +23,39 @@ LOOKBACK_DAYS = 8
 MAX_PAGES = 40
 
 
-def recent_items(url):
+def fetch_page(url):
+    """Fetch one feed page, retrying once with fresh cookies.
+
+    fundsforNGOs sits behind Cloudflare, which now and then sends GitHub's
+    servers round a redirect loop; a second try with new cookies usually works.
+    """
+    try:
+        return fetch_rss(url)
+    except requests.TooManyRedirects:
+        SESSION.cookies.clear()
+        time.sleep(5)
+        return fetch_rss(url)
+
+
+def recent_items(name, url):
     """Read a WordPress feed page by page until posts are older than LOOKBACK_DAYS."""
     cutoff = datetime.now() - timedelta(days=LOOKBACK_DAYS)
     items = []
     for page in range(1, MAX_PAGES + 1):
+        # Page 1 is the plain feed URL; ?paged=1 only redirects back to it
+        page_url = url if page == 1 else f"{url}?paged={page}"
         try:
-            page_items = fetch_rss(f"{url}?paged={page}")
+            page_items = fetch_page(page_url)
         except requests.HTTPError:
             if page == 1:
                 raise
             break  # past the last page
+        except requests.RequestException as e:
+            if page == 1:
+                raise
+            # Keep the pages already read rather than losing the whole feed
+            print(f"[Feeds] {name}: stopped at page {page} ({e}); keeping {len(items)} posts")
+            break
         if not page_items:
             break
         items.extend(i for i in page_items if not i["published"] or i["published"] >= cutoff)
@@ -52,7 +75,7 @@ def fetch():
 
     for name, url in FEEDS.items():
         try:
-            items = recent_items(url)
+            items = recent_items(name, url)
         except requests.RequestException as e:
             print(f"[Feeds] Error fetching {name}: {e}")
             continue
